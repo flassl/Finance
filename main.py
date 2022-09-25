@@ -1,6 +1,5 @@
 from kivy.core.window import Window
 from kivy.metrics import dp
-Window.softinput_mode = "below_target"
 ##window_width = dp(360)
 ##window_height = dp(780)
 ##Window.size = (window_width, window_height)
@@ -483,6 +482,7 @@ class FinanceApp (MDApp):
         app = MDApp.get_running_app()
         create_table_balance()
         Window.bind(size=app.root.on_resize)
+        Window.softinput_mode = "below_target"
         Window.release_all_keyboards()
 
 
