@@ -1,5 +1,6 @@
 from kivy.core.window import Window
 from kivy.metrics import dp
+Window.softinput_mode = "below_target"
 ##window_width = dp(360)
 ##window_height = dp(780)
 ##Window.size = (window_width, window_height)
@@ -96,10 +97,12 @@ class Finances(MDFloatLayout):
     drop_down = ObjectProperty(None)
     balance_label = ObjectProperty(None)
     is_valid = True
+    keyboard = None
 
     def __init__(self, **kwargs):
         super(Finances, self).__init__(**kwargs)
         Clock.schedule_once(self._add_widgets, 0.1)
+        self.keyboard = Window.request_keyboard(self.keyboard_closed, self, 'text')
 
     def _add_widgets(self, dt):
         app = MDApp.get_running_app()
@@ -111,6 +114,8 @@ class Finances(MDFloatLayout):
     def on_resize(self, *args):
         self.ids.pie_chart.on_resize()
 
+    def keyboard_closed(self):
+        pass
     def show_drop_down(self):
         if self.drop_down.dropped_down:
             self.drop_down.toggle_drop_down()
@@ -135,7 +140,10 @@ class Finances(MDFloatLayout):
         if self.drop_down.dropped_down:
             self.drop_down.toggle_drop_down()
         self.show_drop_down()
-        ##self.inflate_items()
+        if self.current_identifier == 0:
+            self.ids.input_amount.hint_text = "income"
+        if self.current_identifier == 1:
+            self.ids.input_amount.hint_text = "expense"
 
     def inflate_items(self):
         if self.drop_down.dropped_down:
@@ -164,7 +172,9 @@ class Finances(MDFloatLayout):
             self.ids.input_amount.helper_text = "input a number"
             self.ids.input_amount.text = ""
             self.ids.input_amount.error = True
+        self.pos = (self.pos[0], self.parent.height)
         self.is_valid = True
+
     def commit_ticket(self):
         self.ids.pie_chart.set_last_progress_to0()
         now = datetime.now()
