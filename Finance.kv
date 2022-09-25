@@ -63,7 +63,10 @@ Finances:
                     pos_hint: {"center_x": .5, "center_y": 0}
                     size_hint: (0.9, None)
                     hint_text: "Amount"
+                    helper_text: "input a valid amount"
+                    helper_text_mode: "on_error"
                     theme_text_color: "Custom"
+                    on_focus: finances.reset_amount_input()
                 MDTextField:
                     id: input_name
                     pos_hint: {"center_x": .5, "center_y": 0}

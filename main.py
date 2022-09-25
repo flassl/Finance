@@ -95,6 +95,7 @@ class Finances(MDFloatLayout):
     transaction_category = ""
     drop_down = ObjectProperty(None)
     balance_label = ObjectProperty(None)
+    is_valid = True
 
     def __init__(self, **kwargs):
         super(Finances, self).__init__(**kwargs)
@@ -111,12 +112,15 @@ class Finances(MDFloatLayout):
         self.ids.pie_chart.on_resize()
 
     def show_drop_down(self):
+        if self.drop_down.dropped_down:
+            self.drop_down.toggle_drop_down()
         input_field = self.ids.input_field
         animation = Animation(pos=(input_field.pos[0], self.ids.input_field.size[1] - 3 * self.ids.input_amount.size[1])
                               , t='out_cubic', duration=0.5)
         animation.start(self.drop_down.main_button)
 
     def show_ticket(self, identifier):
+        app = MDApp.get_running_app()
         input_field = self.ids.input_field
         animation = Animation(pos=(input_field.pos[0], input_field.size[1] - 1 * self.ids.input_amount.size[1]),
                               t='out_cubic', duration=0.5)
@@ -128,7 +132,10 @@ class Finances(MDFloatLayout):
                               , t='out_cubic', duration=0.5)
         animation.start(self.drop_down)
         self.current_identifier = identifier
-        self.inflate_items()
+        if self.drop_down.dropped_down:
+            self.drop_down.toggle_drop_down()
+        self.show_drop_down()
+        ##self.inflate_items()
 
     def inflate_items(self):
         if self.drop_down.dropped_down:
@@ -151,13 +158,21 @@ class Finances(MDFloatLayout):
         animation = Animation(pos=(self.ids.commit_button.pos[0], - self.ids.commit_button.height - 10), t='out_cubic')
         animation.start(commit_button)
 
+    def reset_amount_input(self):
+        self.ids.input_amount.error = False
+        if self.ids.input_amount.text.isalpha():
+            self.ids.input_amount.helper_text = "input a number"
+            self.ids.input_amount.text = ""
+            self.ids.input_amount.error = True
+        self.is_valid = True
     def commit_ticket(self):
         self.ids.pie_chart.set_last_progress_to0()
         now = datetime.now()
         self.transaction_category = self.drop_down.selected.text
-        if self.ids.input_amount.text == "":
-            # to do: show error message
-            pass
+        if (self.ids.input_amount.text == "") or self.ids.input_amount.text.isalpha():
+            self.ids.input_amount.helper_text = "amount is required"
+            self.ids.input_amount.error = True
+            self.is_valid = False
         elif self.current_identifier == 0:
             # to do : check for input acceptance
             self.transaction_value = float(self.ids.input_amount.text)
@@ -168,15 +183,16 @@ class Finances(MDFloatLayout):
             self.transaction_value = - float(self.ids.input_amount.text)
             self.balance -= float(self.ids.input_amount.text)
             save_transaction(now, - float(self.ids.input_amount.text), self.drop_down.selected.text, False)
-        self.transaction_amount = float(self.ids.input_amount.text)
-        animation = Animation(pos=(self.ids.commit_button.pos[0], self.ids.commit_button.pos[1] + 50), t='out_cubic')
-        animation.bind(on_progress=self.commit_on_progress_callback)
-        animation.start(self.ids.commit_button)
-        self.animate_y(self.ids.input_amount, 50)
-        self.animate_y(self.ids.input_name, 50)
-        self.animate_y(self.drop_down.selected, 50)
-        animation.bind(on_complete=self.reset_input_display)
-        save_transaction(now, self.balance, self.drop_down.selected.text, True)
+        if self.is_valid:
+            self.transaction_amount = float(self.ids.input_amount.text)
+            animation = Animation(pos=(self.ids.commit_button.pos[0], self.ids.commit_button.pos[1] + 50), t='out_cubic')
+            animation.bind(on_progress=self.commit_on_progress_callback)
+            animation.start(self.ids.commit_button)
+            self.animate_y(self.ids.input_amount, 50)
+            self.animate_y(self.ids.input_name, 50)
+            self.animate_y(self.drop_down.selected, 50)
+            animation.bind(on_complete=self.reset_input_display)
+            save_transaction(now, self.balance, self.drop_down.selected.text, True)
 
     def animate_y(self, item, amount):
         animation = Animation(pos=(item.pos[0], item.pos[1] + amount), t='out_cubic')
@@ -208,7 +224,8 @@ class Finances(MDFloatLayout):
         self.animate_y(name, -50)
         self.drop_down.pos = (self.drop_down.pos[0], self.drop_down.pos[1] + 50)
         self.animate_y(self.drop_down, -50)
-        self.inflate_items()
+        self.drop_down.clear_items()
+        self.show_drop_down()
         input.text = ""
         name.text = ""
         self.hide_commit_button()
@@ -372,6 +389,11 @@ class DropDownMenu(MDFloatLayout):
     def update_pos(self, *args):
         self.main_button.pos = self.pos
 
+    def clear_items(self):
+        for item in self.items:
+            self.remove_widget(item)
+        self.items.clear()
+
     def inflate_items(self, item_names):
 
         def set_selected(item):
@@ -385,9 +407,7 @@ class DropDownMenu(MDFloatLayout):
             app = MDApp
             app.get_running_app().root.show_commit_button()
 
-        for item in self.items:
-            self.remove_widget(item)
-        self.items.clear()
+        self.clear_items()
 
         for item_name in item_names:
             item = MDRectangleFlatButton(text=item_name, top=10)
@@ -425,6 +445,7 @@ class DropDownMenu(MDFloatLayout):
             self.main_button.line_color = app.theme_cls.primary_dark
 
         def drop_down():
+            app.root.inflate_items()
             for index, item in enumerate(self.items):
                 item.pos = self.pos
                 animation = Animation(pos=(self.pos[0], self.pos[1] - (item.height + 10) * (index + 1)), t='out_cubic',
