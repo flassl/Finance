@@ -6,6 +6,7 @@ Window.size = (window_width, window_height)
 Window.top = -500
 Window.left = -1200
 from kivy.graphics import Ellipse, Color
+from kivy.lang.builder import Builder
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.widget import Widget
 from kivy.clock import Clock
@@ -441,6 +442,7 @@ class FinanceApp (MDApp):
         self.theme_cls.theme_style = "Dark"
         self.theme_cls.primary_palette = "Pink"
         #Window.bind(size=app.root.on_resize)
+        return Builder.load_file("Finance.kv")
 
 
     def on_start(self):
