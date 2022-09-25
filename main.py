@@ -222,6 +222,7 @@ class PieChart(MDFloatLayout):
     radius_difference = 100
     background_circle = ObjectProperty(None)
     foreground_circle = ObjectProperty(None)
+    virgin = True
 
     def __init__(self, **kwargs):
         super(PieChart, self).__init__(**kwargs)
@@ -234,8 +235,10 @@ class PieChart(MDFloatLayout):
         self.pos = (holder_widget.size[0] / 2 - self.size[0] / 2, holder_widget.size[1] * 0.55)
         transactions = fetch_transactions(True)
         current_angle = 0
+        print("1")
         for category_name in finance_categories_expense:
             self.pie_dictionary.update({category_name: 0})
+            print(category_name)
         if len(transactions) > 0:
             for transaction in transactions:
                 self.pie_dictionary[transaction[3]] += transaction[2]
@@ -243,7 +246,8 @@ class PieChart(MDFloatLayout):
         self.background_circle = PieSlice(self.pos, self.size, [1, 1, 1, 0.1],
                              0, 360, "place_holder")
         self.add_widget(self.background_circle)
-        app.root.ids.legend.add_widget(Widget())
+        if len(app.root.ids.legend.children) <= 0:
+            app.root.ids.legend.add_widget(Widget())
         for key in self.pie_dictionary.keys():
             color = finance_categories_expense_color_map.get(key)
             if self.total_expense == 0:
@@ -259,8 +263,10 @@ class PieChart(MDFloatLayout):
             new_button.icon = finance_categories_expense_icon_map.get(key)
             new_button.theme_icon_color = "Custom"
             new_button.icon_color = color
-            app.root.ids.legend.add_widget(new_button)
-        app.root.ids.legend.add_widget(Widget())
+            if len(app.root.ids.legend.children) <= len(finance_categories_expense) + 1:
+                app.root.ids.legend.add_widget(new_button)
+        if len(app.root.ids.legend.children) <= len(finance_categories_expense) + 1:
+            app.root.ids.legend.add_widget(Widget())
 
         new_size = (self.size[0] - self.radius_difference, self.size[0] - self.radius_difference)
         new_pos = (0 + holder_widget.size[0] / 2 - (self.size[0] - self.radius_difference) / 2,

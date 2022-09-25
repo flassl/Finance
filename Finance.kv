@@ -28,12 +28,7 @@ Finances:
             size_hint: (None, None)
             width: self.parent.width
             height: self.parent.height / 2
-            canvas.before:
-                Color:
-                    rgba: app.theme_cls.primary_dark
-                Line:
-                    width: 1
-                    rectangle: (self.x, self.y, self.width, self.height)
+
             BoxLayout:
                 orientation: 'vertical'
                 Widget:
