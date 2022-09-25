@@ -1,0 +1,104 @@
+Finances:
+
+<Finances>
+    id: finances
+    size_hint: (1, 1)
+    BoxLayout:
+        orientation: 'vertical'
+        size_hint: (1, 1)
+        FloatLayout:
+            size_hint: (None, None)
+            width: self.parent.width
+            height: self.parent.height
+            canvas.before:
+                Color:
+                    rgba: app.theme_cls.primary_dark
+                Line:
+                    width: 1
+                    rectangle: (self.x, self.y, self.width, self.height)
+            PieChart:
+                id: pie_chart
+                size_hint: (None, None)
+                width: self.parent.width
+                height: self.parent.height
+                text: "Balance"
+                halign: "center"
+                color: app.theme_cls.primary_dark
+                canvas.before:
+                    Color:
+                        rgba: app.theme_cls.primary_dark
+                    Line:
+                        width: 1
+                        rectangle: (self.x, self.y, self.width, self.height)
+
+            BoxLayout:
+                id: legend
+                size_hint: (1, None)
+                height: self.parent.height/13
+                top: self.parent.top
+
+        BoxLayout:
+            BoxLayout:
+                orientation: 'vertical'
+                Widget:
+                MDIconButton:
+                    icon: "plus-circle-outline"
+                    size_hint: (1, 1)
+                    pos_hint: {"center_x": .5, "center_y": .5}
+                    padding: 10
+                    theme_icon_color: "Custom"
+                    icon_color: app.theme_cls.primary_dark
+                    on_release: finances.show_ticket(0)
+                Widget:
+            BoxLayout:
+                orientation: 'vertical'
+                id: input_field
+                pos_hint_y : None
+                pos:(self.pos[0], -self.size[1] - 10)
+                canvas.before:
+                    Color:
+                        rgba: app.theme_cls.primary_dark
+                    Line:
+                        width: 1
+                        rectangle: (self.x, self.y, self.width, self.height)
+                MDTextField:
+                    id: input_amount
+                    pos_hint: {"center_x": .5, "center_y": 0}
+                    size_hint: (0.9, None)
+                    hint_text: "Amount"
+                    theme_text_color: "Custom"
+                MDTextField:
+                    id: input_name
+                    pos_hint: {"center_x": .5, "center_y": 0}
+                    size_hint: (0.9, None)
+                    hint_text: "name"
+                    theme_text_color: "Custom"
+                BoxLayout:
+                    id: drop_down_holder
+                MDIconButton:
+                    id: commit_button
+                    icon: "chevron-double-up"
+                    size_hint: (1, 1)
+                    pos_hint: {"center_x": .5, "center_y": .5}
+                    padding: 10
+                    theme_icon_color: "Custom"
+                    icon_color: app.theme_cls.primary_dark
+                    on_release: finances.commit_ticket()
+            BoxLayout:
+                orientation: 'vertical'
+                Widget:
+                MDIconButton:
+                    icon: "minus-circle-outline"
+                    size_hint: (1, 1)
+                    pos_hint: {"center_x": .5, "center_y": .5}
+                    padding: 10
+                    theme_icon_color: "Custom"
+                    icon_color: app.theme_cls.primary_dark
+                    on_release: finances.show_ticket(1)
+                Widget:
+
+<BalanceLabel>
+    id: balance_label
+    size_hint: (None, None)
+    text: "Balance"
+    halign: "center"
