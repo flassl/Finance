@@ -444,7 +444,7 @@ class FinanceApp (MDApp):
     def on_start(self):
         app = MDApp.get_running_app()
         create_table_balance()
-        Window.bind(size=app.root.on_resize)
+
 
 if __name__ == '__main__':
     FinanceApp().run()
