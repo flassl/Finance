@@ -32,6 +32,7 @@ finance_categories_expense_color_map = {"groceries": [0.97, 0.18, 0.53, 1], "ren
                                        "pleasures": [0.21, 0.06, 0.68, 1], "other": [0.25, 0.65, 0.93, 1]}
 
 
+
 def create_table_balance():
     ##cursor.execute("DROP TABLE IF EXISTS Balance")
     cursor.execute(f""" CREATE TABLE IF NOT EXISTS Balance (
@@ -220,8 +221,8 @@ class PieChart(MDFloatLayout):
     total_expense = 0
     last_progress = 0
     radius_difference = dp(100)
-    background_circle = ObjectProperty(None)
-    foreground_circle = ObjectProperty(None)
+    background_circle = None
+    foreground_circle = None
     virgin = True
 
     def __init__(self, **kwargs):
@@ -235,17 +236,16 @@ class PieChart(MDFloatLayout):
         self.pos = (holder_widget.size[0] / 2 - self.size[0] / 2, holder_widget.size[1] * 0.5)
         transactions = fetch_transactions(True)
         current_angle = 0
-        print("1")
         for category_name in finance_categories_expense:
             self.pie_dictionary.update({category_name: 0})
-            print(category_name)
         if len(transactions) > 0:
             for transaction in transactions:
                 self.pie_dictionary[transaction[3]] += transaction[2]
                 self.total_expense += transaction[2]
-        self.background_circle = PieSlice(self.pos, self.size, [1, 1, 1, 0.1],
-                             0, 360, "place_holder")
-        self.add_widget(self.background_circle)
+        if self.background_circle is None:
+            self.background_circle = PieSlice(self.pos, self.size, [1, 1, 1, 0.1],
+                                              0, 360, "place_holder")
+            self.add_widget(self.background_circle)
         if len(app.root.ids.legend.children) <= 0:
             app.root.ids.legend.add_widget(Widget())
         for key in self.pie_dictionary.keys():
@@ -271,10 +271,12 @@ class PieChart(MDFloatLayout):
         new_size = (self.size[0] - self.radius_difference, self.size[0] - self.radius_difference)
         new_pos = (0 + holder_widget.size[0] / 2 - (self.size[0] - self.radius_difference) / 2,
                    self.pos[1] + self.radius_difference / 2)
-        self.foreground_circle = PieSlice(new_pos, new_size, app.theme_cls.bg_normal, 0, 360, "bg")
-        self.add_widget(self.foreground_circle)
-        app.root.balance_label = BalanceLabel()
-        self.add_widget(app.root.balance_label)
+        if self.foreground_circle is None:
+            print(self.foreground_circle)
+            self.foreground_circle = PieSlice(new_pos, new_size, app.theme_cls.bg_normal, 0, 360, "bg")
+            self.add_widget(self.foreground_circle)
+            app.root.balance_label = BalanceLabel()
+            self.add_widget(app.root.balance_label)
 
     def on_resize(self):
         app = MDApp.get_running_app()
@@ -295,7 +297,6 @@ class PieChart(MDFloatLayout):
         self.last_progress = progress
         increment = value * progress_delta
         self.total_expense += increment
-        ##print(increment)
         if category in self.pie_dictionary:
             self.pie_dictionary[category] += increment
         else:
@@ -425,7 +426,6 @@ class DropDownMenu(MDFloatLayout):
             self.main_button.line_color = app.theme_cls.primary_dark
 
         def drop_down():
-            print("dd")
             for index, item in enumerate(self.items):
                 item.pos = self.pos
                 animation = Animation(pos=(self.pos[0], self.pos[1] - (item.height + 10) * (index + 1)), t='out_cubic',
@@ -445,15 +445,15 @@ class DropDownMenu(MDFloatLayout):
 
 class FinanceApp (MDApp):
     def build(self):
-        app = MDApp.get_running_app()
         self.theme_cls.theme_style = "Dark"
         self.theme_cls.primary_palette = "Pink"
-        Window.bind(size=app.root.on_resize)
         return Builder.load_file("Finance.kv")
 
 
     def on_start(self):
+        app = MDApp.get_running_app()
         create_table_balance()
+        Window.bind(size=app.root.on_resize)
 
 if __name__ == '__main__':
     FinanceApp().run()
