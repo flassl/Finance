@@ -1,10 +1,10 @@
 from kivy.core.window import Window
 from kivy.metrics import dp
-##window_width = dp(360)
-##window_height = dp(780)
-##Window.size = (window_width, window_height)
-##Window.top = -500
-##Window.left = -1200
+window_width = dp(360)
+window_height = dp(780)
+Window.size = (window_width, window_height)
+Window.top = -500
+Window.left = -1200
 from kivy.graphics import Ellipse, Color
 from kivy.lang.builder import Builder
 from kivy.uix.floatlayout import FloatLayout
@@ -112,19 +112,19 @@ class Finances(MDFloatLayout):
 
     def show_drop_down(self):
         input_field = self.ids.input_field
-        animation = Animation(pos=(input_field.pos[0], self.ids.input_field.size[1] - 3.5 * self.ids.input_amount.size[1])
+        animation = Animation(pos=(input_field.pos[0], self.ids.input_field.size[1] - 3 * self.ids.input_amount.size[1])
                               , t='out_cubic', duration=0.5)
         animation.start(self.drop_down)
 
     def show_ticket(self, identifier):
         input_field = self.ids.input_field
-        animation = Animation(pos=(input_field.pos[0], input_field.size[1] - 1.5 * self.ids.input_amount.size[1]),
+        animation = Animation(pos=(input_field.pos[0], input_field.size[1] - 1 * self.ids.input_amount.size[1]),
                               t='out_cubic', duration=0.5)
         animation.start(self.ids.input_amount)
-        animation = Animation(pos=(input_field.pos[0], input_field.size[1] - 2.5 * self.ids.input_amount.size[1]),
+        animation = Animation(pos=(input_field.pos[0], input_field.size[1] - 2 * self.ids.input_amount.size[1]),
                               t='out_cubic', duration=0.5)
         animation.start(self.ids.input_name)
-        animation = Animation(pos=(input_field.pos[0], self.ids.input_field.size[1] - 3.5 * self.ids.input_amount.size[1])
+        animation = Animation(pos=(input_field.pos[0], self.ids.input_field.size[1] - 3 * self.ids.input_amount.size[1])
                               , t='out_cubic', duration=0.5)
         animation.start(self.drop_down)
         self.current_identifier = identifier
@@ -233,7 +233,7 @@ class PieChart(MDFloatLayout):
         app = MDApp.get_running_app()
         holder_widget = self.parent.parent
         self.size = (holder_widget.size[1] / 3, holder_widget.size[1] / 3)
-        self.pos = (holder_widget.size[0] / 2 - self.size[0] / 2, holder_widget.size[1] * 0.5)
+        self.pos = (holder_widget.size[0] / 2 - self.size[0] / 2, holder_widget.size[1] * 0.55)
         transactions = fetch_transactions(True)
         current_angle = 0
         for category_name in finance_categories_expense:
@@ -272,7 +272,6 @@ class PieChart(MDFloatLayout):
         new_pos = (0 + holder_widget.size[0] / 2 - (self.size[0] - self.radius_difference) / 2,
                    self.pos[1] + self.radius_difference / 2)
         if self.foreground_circle is None:
-            print(self.foreground_circle)
             self.foreground_circle = PieSlice(new_pos, new_size, app.theme_cls.bg_normal, 0, 360, "bg")
             self.add_widget(self.foreground_circle)
             app.root.balance_label = BalanceLabel()
@@ -414,7 +413,7 @@ class DropDownMenu(MDFloatLayout):
                     hide_item(item)
             def hide_item(item):
                 Animation.cancel(animation, item)
-                item.pos = (self.pos[0], - item.height - 10)
+                item.pos = (self.pos[0], - item.height - dp(20))
 
             for index, item in enumerate(self.items):
                 ##item.pos = self.pos
@@ -449,11 +448,11 @@ class FinanceApp (MDApp):
         self.theme_cls.primary_palette = "Pink"
         return Builder.load_file("Finance.kv")
 
-
     def on_start(self):
         app = MDApp.get_running_app()
         create_table_balance()
         Window.bind(size=app.root.on_resize)
+
 
 if __name__ == '__main__':
     FinanceApp().run()
