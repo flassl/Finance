@@ -22,7 +22,7 @@ Finances:
                 id: legend
                 size_hint: (1, None)
                 height: self.parent.height/13
-                top: self.parent.parent.top
+                top: self.parent.parent.top - self.parent.height/26
 
         BoxLayout:
             size_hint: (None, None)
@@ -51,7 +51,7 @@ Finances:
                 orientation: 'vertical'
                 id: input_field
                 pos_hint_y : None
-                pos:(self.pos[0], -self.size[1] - 10)
+                pos:(self.pos[0], -self.size[1] - dp(20))
                 canvas.before:
                     Color:
                         rgba: app.theme_cls.primary_dark
