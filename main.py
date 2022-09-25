@@ -437,14 +437,14 @@ class DropDownMenu(MDFloatLayout):
 
 class FinanceApp (MDApp):
     def build(self):
+        app = MDApp.get_running_app()
         self.theme_cls.theme_style = "Dark"
         self.theme_cls.primary_palette = "Pink"
+        #Window.bind(size=app.root.on_resize)
 
 
     def on_start(self):
-        app = MDApp.get_running_app()
         create_table_balance()
-
 
 if __name__ == '__main__':
     FinanceApp().run()
