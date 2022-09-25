@@ -10,12 +10,6 @@ Finances:
             size_hint: (None, None)
             width: self.parent.width
             height: self.parent.height
-            canvas.before:
-                Color:
-                    rgba: app.theme_cls.primary_dark
-                Line:
-                    width: 1
-                    rectangle: (self.x, self.y, self.width, self.height)
             PieChart:
                 id: pie_chart
                 size_hint: (None, None)
@@ -24,20 +18,22 @@ Finances:
                 text: "Balance"
                 halign: "center"
                 color: app.theme_cls.primary_dark
-                canvas.before:
-                    Color:
-                        rgba: app.theme_cls.primary_dark
-                    Line:
-                        width: 1
-                        rectangle: (self.x, self.y, self.width, self.height)
-
             BoxLayout:
                 id: legend
                 size_hint: (1, None)
                 height: self.parent.height/13
-                top: self.parent.top
+                top: self.parent.parent.top
 
         BoxLayout:
+            size_hint: (None, None)
+            width: self.parent.width
+            height: self.parent.height / 2
+            canvas.before:
+                Color:
+                    rgba: app.theme_cls.primary_dark
+                Line:
+                    width: 1
+                    rectangle: (self.x, self.y, self.width, self.height)
             BoxLayout:
                 orientation: 'vertical'
                 Widget:
@@ -51,6 +47,12 @@ Finances:
                     on_release: finances.show_ticket(0)
                 Widget:
             BoxLayout:
+                canvas.before:
+                    Color:
+                        rgba: app.theme_cls.primary_dark
+                    Line:
+                        width: 1
+                        rectangle: (self.x, self.y, self.width, self.height)
                 orientation: 'vertical'
                 id: input_field
                 pos_hint_y : None

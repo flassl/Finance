@@ -92,6 +92,7 @@ class Finances(MDFloatLayout):
     transaction_value = 0
     transaction_category = ""
     drop_down = ObjectProperty(None)
+    balance_label = ObjectProperty(None)
 
     def __init__(self, **kwargs):
         super(Finances, self).__init__(**kwargs)
@@ -103,7 +104,6 @@ class Finances(MDFloatLayout):
         self.ids.input_field.bind(pos=self.update_pos)
         self.drop_down = DropDownMenu("Category")
         self.ids.drop_down_holder.add_widget(self.drop_down)
-        app = MDApp.get_running_app()
 
     def on_resize(self, *args):
         self.ids.pie_chart.on_resize()
@@ -140,7 +140,7 @@ class Finances(MDFloatLayout):
 
     def show_commit_button(self):
         commit_button = self.ids.commit_button
-        animation = Animation(pos=(commit_button.pos[0], self.ids.input_field.size[1] - 6 * self.ids.input_name.size[1]),
+        animation = Animation(pos=(commit_button.pos[0], self.ids.input_field.size[1] - 5 * self.ids.input_name.size[1]),
                               t='out_cubic', duration=1)
         animation.start(commit_button)
 
@@ -181,7 +181,7 @@ class Finances(MDFloatLayout):
         animation.start(item)
 
     def update_balance_display(self, balance):
-        self.ids.balance_label.text = str(balance)
+        self.balance_label.text = str(balance)
 
     def update_input_display(self, balance):
         self.ids.input_amount.text = str(balance)
@@ -219,7 +219,6 @@ class PieChart(MDFloatLayout):
     total_expense = 0
     last_progress = 0
     radius_difference = 100
-    balance_label = ObjectProperty(None)
     background_circle = ObjectProperty(None)
     foreground_circle = ObjectProperty(None)
 
@@ -232,7 +231,6 @@ class PieChart(MDFloatLayout):
         holder_widget = self.parent.parent
         self.size = (holder_widget.size[1] / 3, holder_widget.size[1] / 3)
         self.pos = (holder_widget.size[0] / 2 - self.size[0] / 2, holder_widget.size[1] * 0.55)
-        #self.pos = (0 + holder_widget.size[0] / 2 - self.size[0] / 2, holder_widget.size[1] * 0.6)
         transactions = fetch_transactions(True)
         current_angle = 0
         for category_name in finance_categories_expense:
@@ -268,10 +266,11 @@ class PieChart(MDFloatLayout):
                    self.pos[1] + self.radius_difference / 2)
         self.foreground_circle = PieSlice(new_pos, new_size, app.theme_cls.bg_normal, 0, 360, "bg")
         self.add_widget(self.foreground_circle)
-        self.balance_label = BalanceLabel()
-        self.add_widget(self.balance_label)
+        app.root.balance_label = BalanceLabel()
+        self.add_widget(app.root.balance_label)
 
     def on_resize(self):
+        app = MDApp.get_running_app()
         holder_widget = self.parent.parent
         self.pos = (holder_widget.size[0] / 2 - self.size[0] / 2, holder_widget.size[1] * 0.55)
         self.size = (holder_widget.size[1] / 3, holder_widget.size[1] / 3)
@@ -280,12 +279,11 @@ class PieChart(MDFloatLayout):
                    self.pos[1] + self.radius_difference / 2)
         self.foreground_circle.on_resize(new_size, new_pos)
         self.background_circle.on_resize(self.size, self.pos)
-        self.balance_label.place_widget(0.1)
+        app.root.balance_label.place_widget(0.1)
         for pie_slice in self.pie_slices:
             pie_slice.on_resize(self.size, self.pos)
 
     def update_pie(self, value, category, progress):
-        print(len(self.pie_slices))
         progress_delta = progress - self.last_progress
         self.last_progress = progress
         increment = value * progress_delta
