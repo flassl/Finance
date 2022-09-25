@@ -483,6 +483,7 @@ class FinanceApp (MDApp):
         app = MDApp.get_running_app()
         create_table_balance()
         Window.bind(size=app.root.on_resize)
+        Window.release_all_keyboards()
 
 
 if __name__ == '__main__':
