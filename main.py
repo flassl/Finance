@@ -25,11 +25,11 @@ connection = sl.connect("OrganizerApp.db")
 cursor = connection.cursor()
 
 finance_categories_income = ["wage", "gift", "independency", "other"]
-finance_categories_expense = ["groceries", "rent and services", "pleasures", "other"]
+finance_categories_expense = ["groceries", "pleasures", "rent and services", "other"]
 finance_categories_expense_icon_map = {"groceries": "food-apple", "rent and services": "home", "pleasures": "tea",
                                        "other": "dots-square"}
-finance_categories_expense_color_map = {"groceries": [0.97, 0.18, 0.53, 1], "rent and services": [0.43, 0.05, 0.7, 1],
-                                       "pleasures": [0.21, 0.06, 0.68, 1], "other": [0.25, 0.65, 0.93, 1]}
+finance_categories_expense_color_map = {"groceries": [0.97, 0.18, 0.53, 1], "pleasures": [0.43, 0.05, 0.7, 1],
+                                        "rent and services": [0.21, 0.06, 0.68, 1], "other": [0.25, 0.65, 0.93, 1]}
 
 
 
