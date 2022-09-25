@@ -114,7 +114,7 @@ class Finances(MDFloatLayout):
         input_field = self.ids.input_field
         animation = Animation(pos=(input_field.pos[0], self.ids.input_field.size[1] - 3 * self.ids.input_amount.size[1])
                               , t='out_cubic', duration=0.5)
-        animation.start(self.drop_down)
+        animation.start(self.drop_down.main_button)
 
     def show_ticket(self, identifier):
         input_field = self.ids.input_field
@@ -413,7 +413,7 @@ class DropDownMenu(MDFloatLayout):
                     hide_item(item)
             def hide_item(item):
                 Animation.cancel(animation, item)
-                item.pos = (self.pos[0], - item.height * 2 - dp(20))
+                item.pos = (self.pos[0], - self.pos[1] - item.height * 10 - dp(20))
 
             for index, item in enumerate(self.items):
                 ##item.pos = self.pos
