@@ -413,7 +413,7 @@ class DropDownMenu(MDFloatLayout):
                     hide_item(item)
             def hide_item(item):
                 Animation.cancel(animation, item)
-                item.pos = (self.pos[0], - item.height - dp(20))
+                item.pos = (self.pos[0], - item.height * 2 - dp(20))
 
             for index, item in enumerate(self.items):
                 ##item.pos = self.pos
