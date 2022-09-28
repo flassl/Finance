@@ -18,17 +18,16 @@ Finances:
                 text: "Balance"
                 halign: "center"
                 color: app.theme_cls.primary_dark
+
             BoxLayout:
                 id: legend
                 size_hint: (1, None)
                 height: self.parent.height/13
                 top: self.parent.parent.top
-
         BoxLayout:
             size_hint: (None, None)
             width: self.parent.width
             height: self.parent.height / 2
-
             BoxLayout:
                 orientation: 'vertical'
                 Widget:
@@ -41,51 +40,14 @@ Finances:
                     icon_color: app.theme_cls.primary_dark
                     on_release: finances.show_ticket(0)
                 Widget:
+
+
             BoxLayout:
-                canvas.before:
-                    Color:
-                        rgba: app.theme_cls.primary_dark
-                    Line:
-                        width: 1
-                        rectangle: (self.x, self.y, self.width, self.height)
                 orientation: 'vertical'
                 id: input_field
-                pos_hint_y : None
-                pos:(self.pos[0], -self.size[1]  - dp(20))
-                canvas.before:
-                    Color:
-                        rgba: app.theme_cls.primary_dark
-                    Line:
-                        width: 1
-                        rectangle: (self.x, self.y, self.width, self.height)
-                MDTextField:
-                    id: input_amount
-                    pos_hint: {"center_x": .5, "center_y": 0}
-                    size_hint: (0.9, None)
-                    hint_text: "Amount"
-                    helper_text: "input a valid amount"
-                    helper_text_mode: "on_error"
-                    theme_text_color: "Custom"
-                    on_focus: finances.reset_amount_input()
-                MDTextField:
-                    id: input_name
-                    pos_hint: {"center_x": .5, "center_y": 0}
-                    size_hint: (0.9, None)
-                    hint_text: "name"
-                    theme_text_color: "Custom"
-                BoxLayout:
-                    id: drop_down_holder
-                    pos_hint_y : None
-                    pos:(self.pos[0], -self.size[1]  - dp(20))
-                MDIconButton:
-                    id: commit_button
-                    icon: "chevron-double-up"
-                    size_hint: (1, 1)
-                    pos_hint: {"center_x": .5, "center_y": .5}
-                    padding: 10
-                    theme_icon_color: "Custom"
-                    icon_color: app.theme_cls.primary_dark
-                    on_release: finances.commit_ticket()
+
+
+
             BoxLayout:
                 orientation: 'vertical'
                 Widget:
@@ -104,3 +66,31 @@ Finances:
     size_hint: (None, None)
     text: "Balance"
     halign: "center"
+
+<TicketHolder>
+    orientation: 'vertical'
+    pos_hint: {"center_x": .5}
+    size_hint: (None, None)
+
+
+
+<TransactionHolder>
+    id: transactions
+    orientation: 'vertical'
+    size_hint: (1, None)
+
+<TransactionScrollView>
+    size_hint: (1, 1)
+    id: transactions_scroll_view
+
+
+<TransactionView>
+    MDLabel:
+        id: date
+        size_hint: (0.2, 1)
+    MDLabel:
+        id: name
+        size_hint: (0.5, 1)
+    MDLabel:
+        id: amount
+        size_hint: (0.3, 1)

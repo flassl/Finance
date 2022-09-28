@@ -1,18 +1,22 @@
 from kivy.core.window import Window
 from kivy.metrics import dp
-##window_width = dp(360)
-##window_height = dp(780)
-##Window.size = (window_width, window_height)
+window_width = dp(360)
+window_height = dp(780)
+Window.size = (window_width, window_height)
 ##Window.top = -500
 ##Window.left = -1200
-from kivy.graphics import Ellipse, Color
+from kivy.graphics import Ellipse, Color, Line
 from kivy.lang.builder import Builder
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.widget import Widget
 from kivy.clock import Clock
+from kivy.uix.scrollview import ScrollView
+from kivymd.uix.stacklayout import MDStackLayout
 from kivymd.app import MDApp
-from kivymd.uix.button import MDRectangleFlatButton
+from kivymd.uix.button import MDRectangleFlatButton, MDIconButton
+from kivymd.uix.textfield import MDTextField
 from kivymd.uix.floatlayout import MDFloatLayout
+from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.button import MDIconButton
 from kivymd.uix.label import MDLabel
 from kivy.properties import ObjectProperty
@@ -30,7 +34,6 @@ finance_categories_expense_icon_map = {"groceries": "food-apple", "rent and serv
                                        "other": "dots-square"}
 finance_categories_expense_color_map = {"groceries": [0.97, 0.18, 0.53, 1], "pleasures": [0.43, 0.05, 0.7, 1],
                                         "rent and services": [0.21, 0.06, 0.68, 1], "other": [0.25, 0.65, 0.93, 1]}
-
 
 
 def create_table_balance():
@@ -87,6 +90,13 @@ def fetch_transactions(is_expense):
     return transactions
 
 
+def fetch_transactions_by_cathegory(category):
+    cursor.execute(f"SELECT * FROM Balance WHERE category = '{category}'")
+    transactions = cursor.fetchall()
+    connection.commit()
+    return transactions
+
+
 class Finances(MDFloatLayout):
     current_identifier = 0
     balance = 0
@@ -96,112 +106,101 @@ class Finances(MDFloatLayout):
     drop_down = ObjectProperty(None)
     balance_label = ObjectProperty(None)
     is_valid = True
-    keyboard = None
+    showed_widget = None
+    ticket_holder = None
 
     def __init__(self, **kwargs):
         super(Finances, self).__init__(**kwargs)
         Clock.schedule_once(self._add_widgets, 0.1)
-        self.keyboard = Window.request_keyboard(self.keyboard_closed, self, 'text')
 
     def _add_widgets(self, dt):
-        app = MDApp.get_running_app()
         self.balance = fetch_balance()[0]
-        self.ids.input_field.bind(pos=self.update_pos)
-        self.drop_down = DropDownMenu("Category")
-        self.ids.drop_down_holder.add_widget(self.drop_down)
 
     def on_resize(self, *args):
         self.ids.pie_chart.on_resize()
 
-    def keyboard_closed(self):
-        pass
-    def show_drop_down(self):
-        if self.drop_down.dropped_down:
-            self.drop_down.toggle_drop_down()
+    def show_drop_down(self, *args):
+        if self.ticket_holder.drop_down.dropped_down:
+            self.ticket_holder.drop_down.toggle_drop_down()
         input_field = self.ids.input_field
-        animation = Animation(pos=(input_field.pos[0], self.ids.input_field.size[1] - 3 * self.ids.input_amount.size[1])
+        animation = Animation(pos=(input_field.pos[0], self.ticket_holder.drop_down.pos[1])
                               , t='out_cubic', duration=0.5)
-        animation.start(self.drop_down.main_button)
+        animation.start(self.ticket_holder.drop_down.main_button)
 
     def show_ticket(self, identifier):
-        app = MDApp.get_running_app()
-        input_field = self.ids.input_field
-        animation = Animation(pos=(input_field.pos[0], input_field.size[1] - 1 * self.ids.input_amount.size[1]),
-                              t='out_cubic', duration=0.5)
-        animation.start(self.ids.input_amount)
-        animation = Animation(pos=(input_field.pos[0], input_field.size[1] - 2 * self.ids.input_amount.size[1]),
-                              t='out_cubic', duration=0.5)
-        animation.start(self.ids.input_name)
-        animation = Animation(pos=(input_field.pos[0], self.ids.input_field.size[1] - 3 * self.ids.input_amount.size[1])
-                              , t='out_cubic', duration=0.5)
-        animation.start(self.drop_down)
+        if self.ticket_holder is None:
+            self.ticket_holder = TicketHolder((self.pos[0], self.pos[1] - self.size[1] /2), (self.size[0] * 0.5, self.size[1] /2))
+            self.add_widget(self.ticket_holder)
         self.current_identifier = identifier
-        if self.drop_down.dropped_down:
-            self.drop_down.toggle_drop_down()
+        if self.ticket_holder.drop_down.dropped_down:
+            self.ticket_holder.drop_down.toggle_drop_down()
         self.show_drop_down()
         if self.current_identifier == 0:
-            self.ids.input_amount.hint_text = "income"
+            self.ticket_holder.input_amount.hint_text = "income"
         if self.current_identifier == 1:
-            self.ids.input_amount.hint_text = "expense"
+            self.ticket_holder.input_amount.hint_text = "expense"
+
+        Clock.schedule_once(self.show_drop_down, 0.1)
+        animation = Animation(pos=(self.ticket_holder.pos[0], 0), t='in_cubic', duration=0.3)
+        animation.start(self.ticket_holder)
+        if self.ticket_holder.commit_button is not None:
+            self.hide_commit_button()
 
     def inflate_items(self):
-        if self.drop_down.dropped_down:
-            self.drop_down.toggle_drop_down()
+        if self.ticket_holder.drop_down.dropped_down:
+            self.ticket_holder.drop_down.toggle_drop_down()
         if self.current_identifier == 0:
-            self.ids.input_amount.hint_text = "income"
-            self.drop_down.inflate_items(finance_categories_income)
+            self.ticket_holder.input_amount.hint_text = "income"
+            self.ticket_holder.drop_down.inflate_items(finance_categories_income)
         if self.current_identifier == 1:
-            self.ids.input_amount.hint_text = "expense"
-            self.drop_down.inflate_items(finance_categories_expense)
+            self.ticket_holder.input_amount.hint_text = "expense"
+            self.ticket_holder.drop_down.inflate_items(finance_categories_expense)
 
     def show_commit_button(self):
-        commit_button = self.ids.commit_button
-        animation = Animation(pos=(commit_button.pos[0], self.ids.input_field.size[1] - 5 * self.ids.input_name.size[1]),
+        app = MDApp.get_running_app()
+        if self.ticket_holder.commit_button is None:
+            self.ticket_holder.commit_button = MDIconButton(icon="chevron-double-up", size_hint=(1, 1), top=0, padding=10,
+                                              pos= (self.pos[0] + self.ticket_holder.size[0] / 2, self.pos[1]),
+                                              theme_icon_color="Custom", icon_color=app.theme_cls.primary_dark,
+                                              on_release=app.root.commit_ticket)
+            self.ticket_holder.add_widget(self.ticket_holder.commit_button)
+        animation = Animation(pos=(self.ticket_holder.commit_button.pos[0], self.ids.input_field.size[1] - 5 * self.ticket_holder.input_name.size[1]),
                               t='out_cubic', duration=1)
+        animation.start(self.ticket_holder.commit_button)
+
+    def hide_commit_button(self, *args):
+        commit_button = self.ticket_holder.commit_button
+        animation = Animation(pos=(self.ticket_holder.commit_button.pos[0], - self.ticket_holder.commit_button.height - 10), t='out_cubic')
         animation.start(commit_button)
 
-    def hide_commit_button(self):
-        commit_button = self.ids.commit_button
-        animation = Animation(pos=(self.ids.commit_button.pos[0], - self.ids.commit_button.height - 10), t='out_cubic')
-        animation.start(commit_button)
-
-    def reset_amount_input(self):
-        self.ids.input_amount.error = False
-        if self.ids.input_amount.text.isalpha():
-            self.ids.input_amount.helper_text = "input a number"
-            self.ids.input_amount.text = ""
-            self.ids.input_amount.error = True
-        self.pos = (self.pos[0], self.parent.height)
-        self.is_valid = True
-
-    def commit_ticket(self):
+    def commit_ticket(self, *args):
         self.ids.pie_chart.set_last_progress_to0()
         now = datetime.now()
-        self.transaction_category = self.drop_down.selected.text
-        if (self.ids.input_amount.text == "") or self.ids.input_amount.text.isalpha():
-            self.ids.input_amount.helper_text = "amount is required"
-            self.ids.input_amount.error = True
+        self.transaction_category = self.ticket_holder.drop_down.selected.text
+        if (self.ticket_holder.input_amount.text == "") or self.ticket_holder.input_amount.text.isalpha():
+            self.ticket_holder.input_amount.helper_text = "amount is required"
+            self.ticket_holder.input_amount.error = True
             self.is_valid = False
         elif self.current_identifier == 0:
             # to do : check for input acceptance
-            self.transaction_value = float(self.ids.input_amount.text)
-            self.balance += float(self.ids.input_amount.text)
-            save_transaction(now, self.ids.input_amount.text, self.drop_down.selected.text, False)
+            self.transaction_value = float(self.ticket_holder.input_amount.text)
+            self.balance += float(self.ticket_holder.input_amount.text)
+            save_transaction(now, self.ticket_holder.input_amount.text, self.ticket_holder.drop_down.selected.text, False)
         elif self.current_identifier == 1:
             # to do : check for input acceptance
             self.transaction_value = - float(self.ids.input_amount.text)
-            self.balance -= float(self.ids.input_amount.text)
-            save_transaction(now, - float(self.ids.input_amount.text), self.drop_down.selected.text, False)
+            self.balance -= float(self.ticket_holder.input_amount.text)
+            save_transaction(now, - float(self.ticket_holder.input_amount.text), self.drop_down.selected.text, False)
         if self.is_valid:
-            self.transaction_amount = float(self.ids.input_amount.text)
-            animation = Animation(pos=(self.ids.commit_button.pos[0], self.ids.commit_button.pos[1] + 50), t='out_cubic')
+            self.transaction_amount = float(self.ticket_holder.input_amount.text)
+            animation = Animation(pos=(self.ticket_holder.commit_button.pos[0], self.ticket_holder.commit_button.pos[1] + 50), t='out_cubic')
             animation.bind(on_progress=self.commit_on_progress_callback)
-            animation.start(self.ids.commit_button)
-            self.animate_y(self.ids.input_amount, 50)
-            self.animate_y(self.ids.input_name, 50)
-            self.animate_y(self.drop_down.selected, 50)
+            animation.start(self.ticket_holder.commit_button)
+            self.animate_y(self.ticket_holder.input_amount, 50)
+            self.animate_y(self.ticket_holder.input_name, 50)
+            self.animate_y(self.ticket_holder.drop_down.selected, 50)
             animation.bind(on_complete=self.reset_input_display)
-            save_transaction(now, self.balance, self.drop_down.selected.text, True)
+            save_transaction(now, self.balance, self.ticket_holder.drop_down.selected.text, True)
 
     def animate_y(self, item, amount):
         animation = Animation(pos=(item.pos[0], item.pos[1] + amount), t='out_cubic')
@@ -211,30 +210,30 @@ class Finances(MDFloatLayout):
         self.balance_label.text = str(balance)
 
     def update_input_display(self, balance):
-        self.ids.input_amount.text = str(balance)
+        self.ticket_holder.input_amount.text = str(balance)
 
     def update_pos(self, *args):
-        relative_pos = self.ids.input_field.pos
-        self.ids.input_amount.pos = relative_pos
+        relative_pos = self.ticket_holder.ids.input_field.pos
+        self.ticket_holder.ids.input_amount.pos = relative_pos
 
     def commit_on_progress_callback(self, *args):
         progress = args[2]
         regressive_progress = 1 - progress
-        input = self.ids.input_amount
+        input = self.ticket_holder.input_amount
         self.update_input_display("{:.2f}".format(self.transaction_amount * regressive_progress))
         self.update_balance_display("{:.2f}".format(self.balance - regressive_progress * float(input.text)))
         if self.transaction_value < 0:
             self.ids.pie_chart.update_pie(self.transaction_value, self.transaction_category, progress)
 
     def reset_input_display(self, *args):
-        input = self.ids.input_amount
-        name = self.ids.input_name
-        self.animate_y(input, -50)
-        self.animate_y(name, -50)
-        self.drop_down.pos = (self.drop_down.pos[0], self.drop_down.pos[1] + 50)
-        self.animate_y(self.drop_down, -50)
-        self.drop_down.clear_items()
-        self.show_drop_down()
+        def delete_ticket_holder(*args):
+            self.ticket_holder = None
+        input = self.ticket_holder.input_amount
+        name = self.ticket_holder.input_name
+        self.animate_y(self.ticket_holder, -self.ticket_holder.height)
+        self.animate_y(self.ticket_holder.drop_down.main_button, -self.ticket_holder.height)
+        self.ticket_holder.drop_down.clear_items()
+        Clock.schedule_once(delete_ticket_holder, 0.4)
         input.text = ""
         name.text = ""
         self.hide_commit_button()
@@ -243,7 +242,8 @@ class Finances(MDFloatLayout):
 
 class PieChart(MDFloatLayout):
     pie_slices = []
-    pie_dictionary = {}
+    pie_amount_dictionary = {}
+    category_pie_dictionary = {}
     total_expense = 0
     last_progress = 0
     radius_difference = dp(100)
@@ -256,6 +256,31 @@ class PieChart(MDFloatLayout):
         Clock.schedule_once(self._add_widgets, 0.1)
 
     def _add_widgets(self, dt):
+        def button_category_on_release(category):
+            def rotate_pie_chart (angle):
+                for pie_category in self.category_pie_dictionary:
+                    pie_slice = self.category_pie_dictionary.get(pie_category)
+                    animation = Animation(angle_start=pie_slice.slice.angle_start+angle, t='in_cubic', duration=0.3)
+                    animation &= Animation(angle_end=pie_slice.slice.angle_end+angle, t='in_cubic', duration=0.3)
+                    animation.start(pie_slice.slice)
+
+            def show_transactions(*args):
+                app = MDApp.get_running_app()
+                transactions = fetch_transactions_by_cathegory(category)
+                transactions_widget = TransactionHolder((0, 0), (app.root.size[0] / 2, app.root.size[1]), transactions)
+                scroll_view = TransactionScrollView((0,0), (app.root.size[0], app.root.size[1]/2), transactions)
+                transactions_widget.add_widget(scroll_view)
+
+
+            pie_slice = self.category_pie_dictionary.get(category)
+            angle_to_center = pie_slice.slice.angle_start + (pie_slice.slice.angle_end - pie_slice.slice.angle_start) / 2
+            angle_to_rotate = 180 - angle_to_center
+            rotate_pie_chart(angle_to_rotate)
+            Clock.schedule_once(show_transactions, 0.5)
+
+        self.add_pie_slices_and_legend(button_category_on_release)
+
+    def add_pie_slices_and_legend(self, button_category_on_release):
         app = MDApp.get_running_app()
         holder_widget = self.parent.parent
         self.size = (holder_widget.size[1] / 3, holder_widget.size[1] / 3)
@@ -263,10 +288,10 @@ class PieChart(MDFloatLayout):
         transactions = fetch_transactions(True)
         current_angle = 0
         for category_name in finance_categories_expense:
-            self.pie_dictionary.update({category_name: 0})
+            self.pie_amount_dictionary.update({category_name: 0})
         if len(transactions) > 0:
             for transaction in transactions:
-                self.pie_dictionary[transaction[3]] += transaction[2]
+                self.pie_amount_dictionary[transaction[3]] += transaction[2]
                 self.total_expense += transaction[2]
         if self.background_circle is None:
             self.background_circle = PieSlice(self.pos, self.size, [1, 1, 1, 0.1],
@@ -274,26 +299,27 @@ class PieChart(MDFloatLayout):
             self.add_widget(self.background_circle)
         if len(app.root.ids.legend.children) <= 0:
             app.root.ids.legend.add_widget(Widget())
-        for key in self.pie_dictionary.keys():
+        for key in self.pie_amount_dictionary.keys():
             color = finance_categories_expense_color_map.get(key)
             if self.total_expense == 0:
                 category_angle = 0.0001
             else:
-                category_angle = self.pie_dictionary.get(key) / self.total_expense * 360
+                category_angle = self.pie_amount_dictionary.get(key) / self.total_expense * 360
             pie_slice = PieSlice(self.pos, self.size, color,
                                  current_angle, current_angle + category_angle, key)
             self.add_widget(pie_slice)
             self.pie_slices.append(pie_slice)
+            self.category_pie_dictionary.update({key: pie_slice})
             current_angle += category_angle
             new_button = MDIconButton()
             new_button.icon = finance_categories_expense_icon_map.get(key)
             new_button.theme_icon_color = "Custom"
             new_button.icon_color = color
+            new_button.on_release = partial(button_category_on_release, key)
             if len(app.root.ids.legend.children) <= len(finance_categories_expense) + 1:
                 app.root.ids.legend.add_widget(new_button)
         if len(app.root.ids.legend.children) <= len(finance_categories_expense) + 1:
             app.root.ids.legend.add_widget(Widget())
-
         new_size = (self.size[0] - self.radius_difference, self.size[0] - self.radius_difference)
         new_pos = (0 + holder_widget.size[0] / 2 - (self.size[0] - self.radius_difference) / 2,
                    self.pos[1] + self.radius_difference / 2)
@@ -322,15 +348,15 @@ class PieChart(MDFloatLayout):
         self.last_progress = progress
         increment = value * progress_delta
         self.total_expense += increment
-        if category in self.pie_dictionary:
-            self.pie_dictionary[category] += increment
+        if category in self.pie_amount_dictionary:
+            self.pie_amount_dictionary[category] += increment
         else:
-            self.pie_dictionary.update({category: increment})
+            self.pie_amount_dictionary.update({category: increment})
         current_angle = 0
         for pie_slice in self.pie_slices:
             category_angle = 0.001
             if self.total_expense != 0:
-                category_angle = self.pie_dictionary.get(pie_slice.category) / self.total_expense * 360
+                category_angle = self.pie_amount_dictionary.get(pie_slice.category) / self.total_expense * 360
             pie_slice.slice.angle_start = current_angle
             pie_slice.slice.angle_end = current_angle + category_angle
             current_angle += category_angle
@@ -358,6 +384,110 @@ class PieSlice(FloatLayout):
         self.slice.pos = pos
 
 
+class TicketHolder(MDBoxLayout):
+    input_amount = None
+    input_name = None
+    drop_down = None
+    commit_button = None
+
+    def __init__(self, pos, size, **kwargs):
+        super(TicketHolder, self).__init__(**kwargs)
+        self.pos = pos
+        self.size = size
+        self.clear_widgets(self.children)
+
+        def inflate(*args):
+            app = MDApp.get_running_app()
+            self.input_amount = MDTextField(pos_hint={"center_x": .5, "center_y": 0.2}, size_hint=(0.9, None),
+                                       hint_text="Amount", helper_text="input a valid amount",
+                                       helper_text_mode="on_error", input_type='number')
+            self.input_name = MDTextField(pos_hint={"center_x": .5, "center_y": 0.5}, size_hint=(0.9, None),
+                                       hint_text="Name")
+            self.drop_down = DropDownMenu("Category", self)
+            self.add_widget(self.input_amount)
+            self.add_widget(self.input_name)
+            self.add_widget(self.drop_down)
+            self.add_widget(Widget())
+        inflate()
+        print(self.children)
+
+    def reset_amount_input(self):
+        self.ticket_holder.input_amount.error = False
+        if self.ticket_holder.input_amount.text.isalpha():
+            self.ticket_holder.input_amount.helper_text = "input a number"
+            self.ticket_holder.input_amount.text = ""
+            self.ticket_holder.input_amount.error = True
+            print(self.current_identifier)
+            if self.current_identifier == 0:
+                self.show_commit_button()
+        self.pos = (self.pos[0], self.parent.height)
+        self.is_valid = True
+
+
+class TransactionHolder(MDBoxLayout):
+    def __init__(self, pos, size, transactions, **kwargs):
+        super(TransactionHolder, self).__init__(size_hint=(None, None), **kwargs)
+        app = MDApp.get_running_app()
+        self.pos = pos
+        self.size = size
+        print(self.pos)
+        print(self.size)
+        with self.canvas:
+            Color(app.theme_cls.primary_dark)
+            self.line = Line(points=[self.x, self.y, self.width, self.height], width=1)
+            self.bind(pos = self.update_line,
+                      size = self.update_line)
+
+    def update_line(self, *args):
+        self.line.points = [self.x, self.y, self.x + self.width, self.y, self.x + self.width, self.y + self.height]
+
+
+class TransactionScrollView(ScrollView):
+    def __init__(self, pos, size, transactions, **kwargs):
+        super(TransactionScrollView, self).__init__(size_hint=(None, None), **kwargs)
+        app = MDApp.get_running_app()
+        self.pos = pos
+        self.size = size
+        self.transaction = transactions
+
+        def inflate():
+            stack_layout = MDStackLayout(size_hint=(1, 1), orientation='lr-tb')
+            for transaction in transactions:
+                transaction_view = TransactionView(transaction[3], datetime.fromtimestamp(transaction[1]), "transaction",
+                                                   transaction[2])
+                stack_layout.add_widget(transaction_view)
+            self.add_widget(stack_layout)
+            self.size = stack_layout.size
+            print(self.pos)
+            print(self.size)
+        inflate()
+        with self.canvas:
+            Color(app.theme_cls.primary_dark)
+            self.line = Line(points=[self.x, self.y, self.width, self.height], width=1)
+            self.bind(pos=self.update_line,
+                      size=self.update_line)
+
+    def update_line(self, *args):
+        self.line.points = [self.x, self.y, self.x + self.width, self.y, self.x + self.width, self.y + self.height]
+
+class TransactionView(MDBoxLayout):
+    def __init__(self, category, date, name, amount, **kwargs):
+        super(TransactionView, self).__init__(**kwargs)
+        self.category = category
+        self.date = date
+        self.name = name
+        self.amount = amount
+
+        def set_widget(dt):
+            self.ids.date.text = (str)(self.date.day) + "." + (str)(self.date.month)
+            self.ids.name.text = name
+            self.ids.amount = amount
+            self.width = self.parent.width
+            self.height = self.parent.height
+
+        Clock.schedule_once(set_widget, 0.1)
+
+
 class BalanceLabel(MDLabel):
     def __init__(self, **kwargs):
         super(BalanceLabel, self).__init__(**kwargs)
@@ -379,24 +509,39 @@ class DropDownMenu(MDFloatLayout):
     dropped_down = False
     main_button = ObjectProperty(None)
 
-    def __init__(self, text, **kwargs):
+    def __init__(self, text, parent, **kwargs):
         super(DropDownMenu, self).__init__(**kwargs)
-
+        app = MDApp.get_running_app()
         self.text = text
+        self.size_hint = (1, None)
+        self.pos_hint_y = None
+        print(self.pos)
+        #with self.canvas:
+        #    Color(app.theme_cls.primary_dark)
+        #    self.line = Line(points=[self.x, self.y, self.width, self.height], width=1)
+        #    self.bind(pos = self.update_line,
+        #              size = self.update_line)
 
         self.set_view()
+        self.height = self.main_button.height
+        Clock.schedule_once(app.root.show_drop_down, 0.5)
+
+    def update_line(self, *args):
+        self.line.points = [self.x, self.y, self.x + self.width, self.y, self.x + self.width, self.y + self.height]
 
     def set_view(self):
-        main_button = MDRectangleFlatButton(text=self.text, top=self.top)
+        main_button = MDRectangleFlatButton(text=self.text, pos_hint=(None, None), pos=self.pos)
         main_button.theme_text_color = "Custom"
         main_button.pos_hint = {"center_x": .5}
+        main_button.pos[1] = self.pos[1] - self.height * 2
         main_button.on_release = self.toggle_drop_down
         self.main_button = main_button
         self.add_widget(self.main_button)
         self.bind(pos=self.update_pos)
 
     def update_pos(self, *args):
-        self.main_button.pos = self.pos
+        ##self.main_button.pos = self.pos
+        pass
 
     def clear_items(self):
         for item in self.items:
@@ -429,7 +574,8 @@ class DropDownMenu(MDFloatLayout):
             self.items.append(item)
             self.add_widget(item)
         app = MDApp.get_running_app()
-        app.root.hide_commit_button()
+        if self.parent.commit_button is not None:
+            app.root.hide_commit_button()
         app.root.show_drop_down()
         self.update_pos()
 
@@ -457,7 +603,7 @@ class DropDownMenu(MDFloatLayout):
             app.root.inflate_items()
             for index, item in enumerate(self.items):
                 item.pos = self.pos
-                animation = Animation(pos=(self.pos[0], self.pos[1] - (item.height + 10) * (index + 1)), t='out_cubic',
+                animation = Animation(pos=(self.pos[0], self.pos[1] - (item.height + dp(10)) * (index + 1)), t='out_cubic',
                                       duration=0.3 - index/10)
                 animation.start(item)
             self.main_button.text_color = "gray"
@@ -488,3 +634,11 @@ class FinanceApp (MDApp):
 
 if __name__ == '__main__':
     FinanceApp().run()
+
+
+##canvas.before:
+##        Color:
+##            rgba: app.theme_cls.primary_dark
+##        Line:
+##            width: 1
+##            rectangle: (self.x, self.y, self.width, self.height)
