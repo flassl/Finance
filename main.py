@@ -409,6 +409,7 @@ class TicketHolder(MDBoxLayout):
             self.add_widget(self.input_name)
             self.add_widget(self.drop_down)
             self.add_widget(Widget())
+            Clock.schedule_once(app.root.show_drop_down, 0.7)
         inflate()
         print(self.children)
 
