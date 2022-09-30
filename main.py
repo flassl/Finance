@@ -3,8 +3,8 @@ from kivy.metrics import dp
 window_width = dp(360)
 window_height = dp(780)
 Window.size = (window_width, window_height)
-##Window.top = -500
-##Window.left = -1200
+Window.top = -500
+Window.left = -1200
 from kivy.graphics import Ellipse, Color, Line
 from kivy.lang.builder import Builder
 from kivy.uix.floatlayout import FloatLayout
@@ -112,6 +112,7 @@ class Finances(MDFloatLayout):
     def __init__(self, **kwargs):
         super(Finances, self).__init__(**kwargs)
         Clock.schedule_once(self._add_widgets, 0.1)
+        print(1)
 
     def _add_widgets(self, dt):
         self.balance = fetch_balance()[0]
@@ -188,9 +189,9 @@ class Finances(MDFloatLayout):
             save_transaction(now, self.ticket_holder.input_amount.text, self.ticket_holder.drop_down.selected.text, False)
         elif self.current_identifier == 1:
             # to do : check for input acceptance
-            self.transaction_value = - float(self.ids.input_amount.text)
+            self.transaction_value = - float(self.ticket_holder.input_amount.text)
             self.balance -= float(self.ticket_holder.input_amount.text)
-            save_transaction(now, - float(self.ticket_holder.input_amount.text), self.drop_down.selected.text, False)
+            save_transaction(now, - float(self.ticket_holder.input_amount.text), self.ticket_holder.drop_down.selected.text, False)
         if self.is_valid:
             self.transaction_amount = float(self.ticket_holder.input_amount.text)
             animation = Animation(pos=(self.ticket_holder.commit_button.pos[0], self.ticket_holder.commit_button.pos[1] + 50), t='out_cubic')
@@ -470,6 +471,7 @@ class TransactionScrollView(ScrollView):
     def update_line(self, *args):
         self.line.points = [self.x, self.y, self.x + self.width, self.y, self.x + self.width, self.y + self.height]
 
+
 class TransactionView(MDBoxLayout):
     def __init__(self, category, date, name, amount, **kwargs):
         super(TransactionView, self).__init__(**kwargs)
@@ -622,7 +624,7 @@ class FinanceApp (MDApp):
     def build(self):
         self.theme_cls.theme_style = "Dark"
         self.theme_cls.primary_palette = "Pink"
-        return Builder.load_file("Finance.kv")
+        return Builder.load_file("FinanceLayout.kv")
 
     def on_start(self):
         app = MDApp.get_running_app()
