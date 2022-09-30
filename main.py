@@ -1,10 +1,10 @@
 from kivy.core.window import Window
 from kivy.metrics import dp
-window_width = dp(360)
-window_height = dp(780)
-Window.size = (window_width, window_height)
-Window.top = -500
-Window.left = -1200
+##window_width = dp(360)
+##window_height = dp(780)
+##Window.size = (window_width, window_height)
+##Window.top = -500
+##Window.left = -1200
 from kivy.graphics import Ellipse, Color, Line
 from kivy.lang.builder import Builder
 from kivy.uix.floatlayout import FloatLayout
