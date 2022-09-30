@@ -403,7 +403,7 @@ class TicketHolder(MDBoxLayout):
                                        hint_text="Amount", helper_text="input a valid amount",
                                        helper_text_mode="on_error", input_type='number')
             self.input_name = MDTextField(pos_hint={"center_x": .5, "center_y": 0.5}, size_hint=(0.9, None),
-                                       hint_text="Name")
+                                       hint_text="Name", input_type='text')
             self.drop_down = DropDownMenu("Category", self)
             self.add_widget(self.input_amount)
             self.add_widget(self.input_name)
