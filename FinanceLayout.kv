@@ -90,13 +90,13 @@ Finances:
         hint_text: "Amount"
         helper_text: "input a valid amount"
         helper_text_mode: "on_error"
-        input_type: 'null'
+        input_type: 'text'
         on_focus: self.parent.reset_amount_input()
     MDTextField:
         id: input_name
         hint_text: "Name"
         pos_hint: {"center_x": .5, "center_y": .5}
-        input_type: 'null'
+        input_type: 'text'
     DropDownMenu:
         id: drop_down
         size_hint: (1, None)
