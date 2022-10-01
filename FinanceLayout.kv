@@ -42,10 +42,12 @@ Finances:
                 Widget:
 
 
-            BoxLayout:
+            FloatLayout:
                 orientation: 'vertical'
                 id: input_field
-
+                TicketHolder:
+                    id: ticket_holder
+                    pos: (self.pos[0], -self.size[1] - dp(10))
 
 
             BoxLayout:
@@ -68,29 +70,92 @@ Finances:
     halign: "center"
 
 <TicketHolder>
+    input_amount: input_amount
+    input_name: input_name
+    drop_down: drop_down
+    commit_button: commit_button
     orientation: 'vertical'
     pos_hint: {"center_x": .5}
-    size_hint: (None, None)
+    pos_hint_y: None
+    size_hint: (1, 1)
+    canvas.before:
+        Color:
+            rgba: app.theme_cls.primary_dark
+        Line:
+            width: 1
+            rectangle: (self.x, self.y, self.width, self.height)
+    MDTextField:
+        id: input_amount
+        pos_hint: {"center_x": .5}
+        hint_text: "Amount"
+        helper_text: "input a valid amount"
+        helper_text_mode: "on_error"
+        input_type: 'number'
+        on_focus: self.parent.reset_amount_input()
+    MDTextField:
+        id: input_name
+        hint_text: "Name"
+        pos_hint: {"center_x": .5, "center_y": .5}
+        input_type: 'text'
+    DropDownMenu:
+        id: drop_down
+        size_hint: (1, None)
+    MDIconButton:
+        id: commit_button
+        icon: "chevron-double-up"
+        size_hint: (1, 1)
+        pos_hint: {"center_x": .5}
+        pos_hint_y: None
+        padding: 10
+        theme_icon_color: "Custom"
+        icon_color: app.theme_cls.primary_dark
+        on_release: self.parent.commit_ticket()
+    Widget:
 
 
 
 <TransactionHolder>
     id: transactions
     orientation: 'vertical'
+    pos_hint_y: None
     size_hint: (1, None)
-
-<TransactionScrollView>
-    size_hint: (1, 1)
-    id: transactions_scroll_view
+    BoxLayout:
+        orientation: 'vertical'
+        spacing: dp(30)
+        MDLabel:
+            id: category_expense_label
+            size_hint: (1, None)
+            text: '100'
+            font_size: dp(25)
+            height: dp(40)
+            halign: 'center'
+        ScrollView:
+            id: scroll_view
+            size_hint: (1, 1)
+            do_scroll_x: False
+            do_scroll_y: True
 
 
 <TransactionView>
-    MDLabel:
-        id: date
-        size_hint: (0.2, 1)
+    size_hint: (1, None)
     MDLabel:
         id: name
         size_hint: (0.5, 1)
+        font_size: dp(13)
+        halign: 'center'
     MDLabel:
         id: amount
-        size_hint: (0.3, 1)
+        size_hint: (0.5, 1)
+        halign: 'center'
+
+<DropDownMenu>
+    main_button: main_button
+    MDRectangleFlatButton:
+        id: main_button
+        text: 'Category'
+        theme_text_color: "Custom"
+        pos_hint: {"center_x": .5}
+        on_release: self.parent.toggle_drop_down()
+        pos_hint_y: None
+        pos:(0, -self.size[1] - dp(10))
+
