@@ -484,7 +484,7 @@ class TransactionHolder(MDBoxLayout):
     stack_layout = ObjectProperty(None)
     def __init__(self, **kwargs):
         super(TransactionHolder, self).__init__(size_hint=(None, None), **kwargs)
-        self.pos = (self.pos[0], - self.height * 4)
+        self.pos = (self.pos[0], - self.height * 6)
 
     def fill_transactions(self):
         self.transactions = fetch_transactions_by_category(self.category)
