@@ -354,7 +354,6 @@ class TicketHolder(MDBoxLayout):
     commit_button = ObjectProperty(None)
     transaction_category = None
     is_valid = True
-    balance = 0
     transaction_amount = 0
     transaction_value = 0
 
@@ -402,34 +401,34 @@ class TicketHolder(MDBoxLayout):
         elif self.current_identifier == 0:
             # to do : check for input acceptance
             self.transaction_value = float(self.input_amount.text)
-            self.balance += float(self.input_amount.text)
+            app.root.balance += float(self.input_amount.text)
             save_transaction(now, float(self.input_amount.text), self.transaction_category, False, self.input_name.text)
         elif self.current_identifier == 1:
             # to do : check for input acceptance
             self.transaction_value = - float(self.input_amount.text)
-            self.balance -= float(self.input_amount.text)
+            app.root.balance -= float(self.input_amount.text)
             save_transaction(now, - float(self.input_amount.text), self.drop_down.selected.text, False, self.input_name.text)
         if self.is_valid:
             self.transaction_amount = float(self.input_amount.text)
             animation = Animation(pos=(self.commit_button.pos[0], self.commit_button.pos[1] + 50), t='out_cubic')
             animation.bind(on_progress=self.commit_on_progress_callback)
             animation.start(self.commit_button)
-            ##self.animate_y(self.ticket_holder.ids.input_amount, 50)
-            ##self.animate_y(self.ticket_holder.ids.input_name, 50)
             if self.current_identifier == 1:
                 self.animate_y(self.drop_down.selected, dp(30))
             self.animate_y(self.input_amount, dp(30))
             self.animate_y(self.input_name, dp(30))
             animation.bind(on_complete=self.reset_input_display)
-            save_transaction(now, self.balance, self.transaction_category, True, "balance")
+            save_transaction(now, app.root.balance, self.transaction_category, True, "balance")
 
     def commit_on_progress_callback(self, *args):
         app = MDApp.get_running_app()
         progress = args[2]
         regressive_progress = 1 - progress
-        input = self.input_amount
         self.update_input_display("{:.2f}".format(self.transaction_amount * regressive_progress))
-        app.root.update_balance_display("{:.2f}".format(self.balance - regressive_progress * float(input.text)))
+        if self.transaction_amount < 0:
+            app.root.update_balance_display("{:.2f}".format(app.root.balance - regressive_progress * self.transaction_value))
+        else:
+            app.root.update_balance_display("{:.2f}".format(app.root.balance - regressive_progress * self.transaction_value))
         if self.transaction_value < 0:
             app.root.ids.pie_chart.update_pie(self.transaction_value, self.transaction_category, progress)
 
