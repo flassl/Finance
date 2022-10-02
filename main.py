@@ -551,10 +551,7 @@ class BalanceLabel(MDFlatButton):
         app = MDApp.get_running_app()
 
         def inflate_transactions(*args):
-
-            pie_chart = app.root.ids.pie_chart
             transaction_holder = app.root.ids.transaction_holder
-            pie_chart.rotate_pie_chart(-pie_chart.category_pie_dictionary.get("groceries").slice.angle_start)
             transaction_holder.stack_layout.clear_widgets(transaction_holder.stack_layout.children)
             transactions = fetch_all_transactions()
             total_expense = 0
@@ -586,8 +583,6 @@ class BalanceLabel(MDFlatButton):
                 transaction_holder.ids.category_expense_label.text = str(total_expense)
                 transaction_holder.ids.category_expense_percentage_label.color = finance_categories_expense_color_map.get("income")
                 transaction_holder.ids.category_expense_label.color = app.theme_cls.primary_dark
-
-
             transaction_holder.ids.scroll_view.size = self.size
             transaction_holder.ids.scroll_view.bar_color = [0, 0, 0, 0]
             transaction_holder.ids.scroll_view.bar_inactive_color = [0, 0, 0, 0]
@@ -603,8 +598,10 @@ class BalanceLabel(MDFlatButton):
             app.root.ticket_holder.reset_input_display()
         if app.root.ids.pie_chart.active_transactions is not None:
             app.root.ids.pie_chart.hide_transactions()
-        Clock.schedule_once(inflate_transactions, 0.3)
-        Clock.schedule_once(show_transactions, 0.4)
+        pie_chart = app.root.ids.pie_chart
+        pie_chart.rotate_pie_chart(-pie_chart.category_pie_dictionary.get("groceries").slice.angle_start)
+        Clock.schedule_once(inflate_transactions, 0.5)
+        Clock.schedule_once(show_transactions, 0.5)
 
 
 class DropDownMenu(MDFloatLayout):
