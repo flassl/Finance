@@ -48,6 +48,12 @@ Finances:
                 TicketHolder:
                     id: ticket_holder
                     pos: (self.pos[0], -self.size[1] - dp(10))
+                TransactionHolder:
+                    id: transaction_holder
+                    size_hint: (None, None)
+                    size: (root.width * 0.5, root.height * 0.4)
+                    pos_hint: {"center_x": .5}
+                    pos_hint_y: None
 
 
             BoxLayout:
@@ -66,8 +72,11 @@ Finances:
 <BalanceLabel>
     id: balance_label
     size_hint: (None, None)
+    pos_hint: {"center_x": 0.5, "center_y": 0.5}
     text: "Balance"
-    halign: "center"
+    theme_text_color: "Custom"
+    text_color: app.theme_cls.primary_dark
+    on_release: self.show_total_transactions()
 
 <TicketHolder>
     input_amount: input_amount
@@ -78,25 +87,20 @@ Finances:
     pos_hint: {"center_x": .5}
     pos_hint_y: None
     size_hint: (1, 1)
-    canvas.before:
-        Color:
-            rgba: app.theme_cls.primary_dark
-        Line:
-            width: 1
-            rectangle: (self.x, self.y, self.width, self.height)
+
     MDTextField:
         id: input_amount
         pos_hint: {"center_x": .5}
         hint_text: "Amount"
         helper_text: "input a valid amount"
         helper_text_mode: "on_error"
-        input_type: 'text'
+        input_type: 'null'
         on_focus: self.parent.reset_amount_input()
     MDTextField:
         id: input_name
         hint_text: "Name"
         pos_hint: {"center_x": .5, "center_y": .5}
-        input_type: 'text'
+        input_type: 'null'
     DropDownMenu:
         id: drop_down
         size_hint: (1, None)
@@ -115,25 +119,38 @@ Finances:
 
 
 <TransactionHolder>
+    stack_layout: stack_layout
     id: transactions
     orientation: 'vertical'
     pos_hint_y: None
     size_hint: (1, None)
     BoxLayout:
         orientation: 'vertical'
-        spacing: dp(30)
+        spacing: dp(20)
+        MDLabel:
+            id: category_expense_percentage_label
+            size_hint: (1, None)
+            text: ''
+            font_size: dp(15)
+            height: dp(10)
+            halign: 'center'
         MDLabel:
             id: category_expense_label
             size_hint: (1, None)
-            text: '100'
+            text: ''
             font_size: dp(25)
-            height: dp(40)
+            height: dp(20)
             halign: 'center'
         ScrollView:
             id: scroll_view
             size_hint: (1, 1)
             do_scroll_x: False
             do_scroll_y: True
+            MDStackLayout:
+                id: stack_layout
+                orientation: 'tb-lr'
+                spacing: dp(7)
+                size_hint_y: None
 
 
 <TransactionView>

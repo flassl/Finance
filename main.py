@@ -13,7 +13,7 @@ from kivy.clock import Clock
 from kivy.uix.scrollview import ScrollView
 from kivymd.uix.stacklayout import MDStackLayout
 from kivymd.app import MDApp
-from kivymd.uix.button import MDRectangleFlatButton, MDIconButton
+from kivymd.uix.button import MDRectangleFlatButton, MDIconButton, MDFlatButton
 from kivymd.uix.textfield import MDTextField
 from kivymd.uix.floatlayout import MDFloatLayout
 from kivymd.uix.boxlayout import MDBoxLayout
@@ -30,10 +30,11 @@ cursor = connection.cursor()
 
 finance_categories_income = ["wage", "gift", "independency", "other"]
 finance_categories_expense = ["groceries", "pleasures", "rent and services", "other"]
-finance_categories_expense_icon_map = {"groceries": "food-apple", "rent and services": "home", "pleasures": "tea",
+finance_categories_expense_icon_map = {"groceries": "cart-outline", "rent and services": "home", "pleasures": "glass-wine",
                                        "other": "dots-square"}
-finance_categories_expense_color_map = {"groceries": [0.97, 0.18, 0.53, 1], "pleasures": [0.43, 0.05, 0.7, 1],
-                                        "rent and services": [0.21, 0.06, 0.68, 1], "other": [0.25, 0.65, 0.93, 1]}
+finance_categories_expense_color_map = {"groceries": [0.97, 0.18, 0.53, 1], "pleasures": [0.6, 0.2, 0.9, 1],
+                                        "rent and services": [0.25, 0.24, 1, 1], "other": [0.25, 0.65, 0.93, 1],
+                                        "income": [0.1, 0.65, 0.4, 1]}
 
 item_height = dp(40)
 
@@ -55,7 +56,7 @@ def create_table_balance():
     connection.commit()
     if not total:
         cursor.execute(
-            f"INSERT INTO Balance VALUES('-1', '{datetime.now().timestamp()}', '0', 'other', 'balance')")
+            f"INSERT INTO Balance VALUES('-1', '{datetime.now().timestamp()}', '0', 'balance', 'balance')")
         connection.commit()
 
 
@@ -77,24 +78,40 @@ def save_transaction(transaction_datetime, amount, category, is_total, name):
 
 
 def fetch_balance():
-    cursor.execute("SELECT amount FROM Balance WHERE transaction_id = '-1'")
+    cursor.execute("SELECT amount FROM Balance WHERE transaction_id = '-1' ORDER BY date_timestamp DESC")
     total = cursor.fetchone()
     connection.commit()
     return total
 
 
+def fetch_total_expense():
+    cursor.execute("SELECT amount FROM Balance WHERE amount < '0' AND transaction_id != '-1' ORDER BY date_timestamp DESC")
+    transactions = cursor.fetchall()
+    total = 0
+    for transaction in transactions:
+        total += transaction[0]
+    return total
+
+
 def fetch_transactions(is_expense):
     if is_expense:
-        cursor.execute("SELECT * FROM Balance WHERE amount < '0'")
+        cursor.execute("SELECT * FROM Balance WHERE amount < '0' AND transaction_id != '-1' ORDER BY date_timestamp DESC")
     else:
-        cursor.execute("SELECT * FROM Balance WHERE amount < '0'")
+        cursor.execute("SELECT * FROM Balance WHERE amount > '0' AND transaction_id != '-1' ORDER BY date_timestamp DESC")
     transactions = cursor.fetchall()
     connection.commit()
     return transactions
 
 
-def fetch_transactions_by_cathegory(category):
-    cursor.execute(f"SELECT * FROM Balance WHERE category = '{category}'")
+def fetch_all_transactions():
+    cursor.execute("SELECT * FROM Balance WHERE transaction_id != '-1' ORDER BY date_timestamp DESC")
+    transactions = cursor.fetchall()
+    connection.commit()
+    return transactions
+
+
+def fetch_transactions_by_category(category):
+    cursor.execute(f"SELECT * FROM Balance WHERE category = '{category}' ORDER BY date_timestamp DESC")
     transactions = cursor.fetchall()
     connection.commit()
     return transactions
@@ -111,6 +128,7 @@ class Finances(MDFloatLayout):
     is_valid = True
     showed_widget = None
     ticket_holder = None
+    transaction_holder = None
 
     def __init__(self, **kwargs):
         super(Finances, self).__init__(**kwargs)
@@ -132,7 +150,6 @@ class Finances(MDFloatLayout):
         self.current_identifier = identifier
         if self.ticket_holder.drop_down.dropped_down:
             self.ticket_holder.drop_down.toggle_drop_down()
-        ##self.ticket_holder.show_drop_down()
         if self.current_identifier == 0:
             self.ticket_holder.input_amount.hint_text = "income"
             self.ticket_holder.current_identifier = 0
@@ -193,20 +210,13 @@ class PieChart(MDFloatLayout):
 
             def show_transactions(*args):
                 app = MDApp.get_running_app()
-                transactions = fetch_transactions_by_cathegory(category)
                 transactions_widget_width = app.root.width * 0.5
                 transactions_widget_height = app.root.height * 0.4
-                transactions_widget_pos = (app.root.width/2-transactions_widget_width / 2,
-                                           ((app.root.height/2 - transactions_widget_height)/2) - app.root.height / 2)
-                transactions_widget_size = (transactions_widget_width, transactions_widget_height)
-                transactions_widget = TransactionHolder(transactions_widget_pos, transactions_widget_size, transactions,
-                                                        finance_categories_expense_color_map.get(category))
-                app.root.add_widget(transactions_widget)
                 animation = Animation(pos=(app.root.width/2-transactions_widget_width / 2,
                                            (app.root.height/2 - transactions_widget_height)/2),
                                       t='in_out_circ', duration=0.3)
-                animation.start(transactions_widget)
-                self.active_transactions = transactions_widget
+                animation.start(app.root.ids.transaction_holder)
+                self.active_transactions = app.root.ids.transaction_holder
 
             app = MDApp.get_running_app()
             pie_slice = self.category_pie_dictionary.get(category)
@@ -217,6 +227,8 @@ class PieChart(MDFloatLayout):
                 app.root.ticket_holder.reset_input_display()
             if self.active_transactions is not None:
                 self.hide_transactions()
+            app.root.ids.transaction_holder.category = category
+            app.root.ids.transaction_holder.fill_transactions()
             Clock.schedule_once(show_transactions, 0.4)
 
         self.add_pie_slices_and_legend(button_category_on_release)
@@ -225,8 +237,7 @@ class PieChart(MDFloatLayout):
         app = MDApp.get_running_app()
         transactions_widget_width = app.root.width * 0.5
         transactions_widget_height = app.root.height * 0.4
-        animation = Animation(pos=(app.root.width/2-transactions_widget_width / 2,
-                                   ((app.root.height/2 - transactions_widget_height)/2) - app.root.height / 2),
+        animation = Animation(pos=(app.root.width/2-transactions_widget_width / 2, - app.root.height / 2),
                               t='in_out_circ', duration=0.3)
         animation.start(self.active_transactions)
 
@@ -241,8 +252,9 @@ class PieChart(MDFloatLayout):
             self.pie_amount_dictionary.update({category_name: 0})
         if len(transactions) > 0:
             for transaction in transactions:
-                self.pie_amount_dictionary[transaction[3]] += transaction[2]
-                self.total_expense += transaction[2]
+                if transaction[3] != "balance":
+                    self.pie_amount_dictionary[transaction[3]] += transaction[2]
+                    self.total_expense += transaction[2]
         if self.background_circle is None:
             self.background_circle = PieSlice(self.pos, self.size, [1, 1, 1, 0.1],
                                               0, 360, "place_holder")
@@ -468,29 +480,41 @@ class TicketHolder(MDBoxLayout):
 
 
 class TransactionHolder(MDBoxLayout):
-    def __init__(self, pos, size, transactions, color, **kwargs):
+    category = ""
+    transactions = []
+    stack_layout = ObjectProperty(None)
+    def __init__(self, **kwargs):
         super(TransactionHolder, self).__init__(size_hint=(None, None), **kwargs)
+        self.pos = (self.pos[0], - self.height * 4)
 
-        def setup_widget():
+    def fill_transactions(self):
+        self.transactions = fetch_transactions_by_category(self.category)
+        print(self.transactions)
+        def setup_widget(*args):
             transactions_total_value = 0
-            for transaction in transactions:
+            for transaction in self.transactions:
                 transactions_total_value += transaction[2]
+
+            color = finance_categories_expense_color_map.get(self.category)
+            if transactions_total_value != 0:
+                percentage_string = str(round((transactions_total_value / fetch_total_expense()) * 100))
+                self.ids.category_expense_percentage_label.text = percentage_string + "%"
+            else:
+                self.ids.category_expense_percentage_label.text = "No expense"
+            self.ids.category_expense_percentage_label.color = color
             self.ids.category_expense_label.text = str(transactions_total_value)
             self.ids.category_expense_label.color = color
-            self.pos = pos
-            self.size = size
             self.ids.scroll_view.size = self.size
             self.ids.scroll_view.bar_color = [0, 0, 0, 0]
             self.ids.scroll_view.bar_inactive_color = [0, 0, 0, 0]
-            stack_layout = MDStackLayout(orientation='tb-lr', spacing=dp(7), size_hint_y=None)
-            stack_layout.size = (self.size[0], len(transactions) * (item_height + 5))
-            for transaction in transactions:
+            self.stack_layout.size = (self.size[0], len(self.transactions) * (item_height + dp(7)))
+            self.stack_layout.clear_widgets(self.stack_layout.children)
+            for transaction in self.transactions:
                 transaction_view = TransactionView(transaction[3], transaction[4],
                                                    transaction[2], color)
-                stack_layout.add_widget(transaction_view)
-            self.ids.scroll_view.add_widget(stack_layout)
+                self.stack_layout.add_widget(transaction_view)
 
-        setup_widget()
+        Clock.schedule_once(setup_widget, 0.4)
 
 
 class TransactionView(MDBoxLayout):
@@ -510,7 +534,7 @@ class TransactionView(MDBoxLayout):
         setup_widget()
 
 
-class BalanceLabel(MDLabel):
+class BalanceLabel(MDFlatButton):
     def __init__(self, **kwargs):
         super(BalanceLabel, self).__init__(**kwargs)
         Clock.schedule_once(self.place_widget, 0.1)
@@ -522,6 +546,65 @@ class BalanceLabel(MDLabel):
         self.pos = self.parent.pos
         self.text = (str)(app.root.balance)
         self.color = app.theme_cls.primary_dark
+
+    def show_total_transactions(self):
+        app = MDApp.get_running_app()
+
+        def inflate_transactions(*args):
+
+            pie_chart = app.root.ids.pie_chart
+            transaction_holder = app.root.ids.transaction_holder
+            pie_chart.rotate_pie_chart(-pie_chart.category_pie_dictionary.get("groceries").slice.angle_start)
+            transaction_holder.stack_layout.clear_widgets(transaction_holder.stack_layout.children)
+            transactions = fetch_all_transactions()
+            total_expense = 0
+            total_income = 0
+            transaction_holder.stack_layout.size = (transaction_holder.size[0], len(transactions) * (item_height + dp(7)))
+            for transaction in transactions:
+                if transaction[2] > 0:
+                    total_income += transaction[2]
+                else:
+                    total_expense += transaction[2]
+                text = transaction[4]
+                color = None
+                if transaction[2] > 0:
+                    color = finance_categories_expense_color_map.get("income")
+                else:
+                    color = app.theme_cls.primary_dark
+                if transaction[4] == "":
+                    text = transaction[3]
+                transaction_view = TransactionView(transaction[3], text,
+                                                   transaction[2], color)
+                transaction_holder.stack_layout.add_widget(transaction_view)
+            if abs(total_income) > abs(total_expense):
+                transaction_holder.ids.category_expense_percentage_label.text = str(total_expense)
+                transaction_holder.ids.category_expense_label.text = str(total_income)
+                transaction_holder.ids.category_expense_percentage_label.color = app.theme_cls.primary_dark
+                transaction_holder.ids.category_expense_label.color = finance_categories_expense_color_map.get("income")
+            else:
+                transaction_holder.ids.category_expense_percentage_label.text = str(total_income)
+                transaction_holder.ids.category_expense_label.text = str(total_expense)
+                transaction_holder.ids.category_expense_percentage_label.color = finance_categories_expense_color_map.get("income")
+                transaction_holder.ids.category_expense_label.color = app.theme_cls.primary_dark
+
+
+            transaction_holder.ids.scroll_view.size = self.size
+            transaction_holder.ids.scroll_view.bar_color = [0, 0, 0, 0]
+            transaction_holder.ids.scroll_view.bar_inactive_color = [0, 0, 0, 0]
+
+        def show_transactions(*args):
+            animation = Animation(pos=(app.root.width / 2 - app.root.ids.transaction_holder.width / 2,
+                                       (app.root.height / 2 - app.root.ids.transaction_holder.height) / 2),
+                                  t='in_out_circ', duration=0.3)
+            animation.start(app.root.ids.transaction_holder)
+            app.root.ids.pie_chart.active_transactions = app.root.ids.transaction_holder
+
+        if app.root.showed_widget is not None:
+            app.root.ticket_holder.reset_input_display()
+        if app.root.ids.pie_chart.active_transactions is not None:
+            app.root.ids.pie_chart.hide_transactions()
+        Clock.schedule_once(inflate_transactions, 0.3)
+        Clock.schedule_once(show_transactions, 0.4)
 
 
 class DropDownMenu(MDFloatLayout):
